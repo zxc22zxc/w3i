@@ -1,5 +1,5 @@
-module github.com/StackExchange/wmi
+module github.com/yusufpapurcu/wmi
 
-go 1.13
+go 1.16
 
 require github.com/go-ole/go-ole v1.2.6
