@@ -1,3 +1,4 @@
+//go:build windows
 // +build windows
 
 package wmi
@@ -103,8 +104,8 @@ func WbemGetMemoryUsageMB(s *SWbemServices) (float64, float64, float64) {
 //Run all benchmarks (should run for at least 60s to get a stable number):
 //go test -run=NONE -bench=Version -benchtime=120s
 
-//Individual benchmarks:
-//go test -run=NONE -bench=NewVersion -benchtime=120s
+// Individual benchmarks:
+// go test -run=NONE -bench=NewVersion -benchtime=120s
 func BenchmarkNewVersion(b *testing.B) {
 	s, err := InitializeSWbemServices(DefaultClient)
 	if err != nil {
@@ -128,7 +129,7 @@ func BenchmarkNewVersion(b *testing.B) {
 	}
 }
 
-//go test -run=NONE -bench=OldVersion -benchtime=120s
+// go test -run=NONE -bench=OldVersion -benchtime=120s
 func BenchmarkOldVersion(b *testing.B) {
 	var dst []Win32_OperatingSystem
 	q := CreateQuery(&dst, "")
