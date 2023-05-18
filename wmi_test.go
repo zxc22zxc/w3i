@@ -1,3 +1,4 @@
+//go:build windows
 // +build windows
 
 package wmi
@@ -36,6 +37,87 @@ func TestFieldMismatch(t *testing.T) {
 	err := Query("SELECT Name, HandleCount FROM Win32_Process", &dst)
 	if err == nil || err.Error() != `wmi: cannot load field "Blah" into a "uint32": no such struct field` {
 		t.Error("Expected err field mismatch")
+	}
+}
+
+func TestMissingFields(t *testing.T) {
+	type s struct {
+		Name           string
+		Missing        uint32
+		MissingPointer *uint32
+	}
+
+	var dst []s
+
+	client := &Client{
+		AllowMissingFields: true,
+	}
+	err := client.Query("SELECT Name FROM Win32_Process", &dst)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := range dst {
+		if dst[i].Missing != 0 {
+			t.Fatal("Expected Missing field to be 0")
+		}
+		if dst[i].MissingPointer != nil {
+			t.Fatal("Expected MissingPointer field to be nil")
+		}
+	}
+
+	// NonePtrZero and PtrNil should only affect the behavior of fields that
+	// exist as result properties, not missing fields.
+	client = &Client{
+		NonePtrZero:        true,
+		PtrNil:             true,
+		AllowMissingFields: true,
+	}
+	dst = []s{}
+	err = client.Query("SELECT Name FROM Win32_Process", &dst)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := range dst {
+		if dst[i].Missing != 0 {
+			t.Fatal("Expected Missing field to be 0")
+		}
+		if dst[i].MissingPointer != nil {
+			t.Fatal("Expected MissingPointer field to be nil")
+		}
+	}
+}
+
+func TestNullPointerField(t *testing.T) {
+	type s struct {
+		Name   string
+		Status *string
+	}
+
+	var dst []s
+
+	client := &Client{}
+	err := client.Query("SELECT Name, Status FROM Win32_Process WHERE Status IS NULL", &dst)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := range dst {
+		if dst[i].Status == nil {
+			t.Fatal("Expected Status field to not be nil")
+		}
+	}
+
+	client = &Client{
+		PtrNil: true,
+	}
+	dst = []s{}
+	err = client.Query("SELECT Name, Status FROM Win32_Process WHERE Status IS NULL", &dst)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := range dst {
+		if dst[i].Status != nil {
+			t.Fatal("Expected Status field to be nil")
+		}
 	}
 }
 
